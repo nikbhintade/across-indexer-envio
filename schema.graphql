@@ -1,0 +1,40 @@
+type Intent {
+    # ID
+    id: ID!
+    depositId: BigInt! # ID of the deposit
+    # Flags
+    filled: Boolean!
+
+    # Addresses
+    depositor: String!
+    recipient: String!
+
+    # Chain ID
+    chainId: BigInt! # Chain ID of chain where deposit was made
+    destinationChainId: BigInt! # Chain ID of chain where intent was filledd
+    # Transaction Details
+    transaction: String!
+    filledTimestamp: BigInt! # timestamp of transaction which filled the intent on destination chain
+    # Relayers Details
+    exclusiveRelayer: String!
+    exclusiveDeadline: BigInt!
+    resolvedBy: String!
+    sameRelayer: Boolean! # flag for relayer that failed to fill intent execulsively
+    feeAmount: BigInt! # amount of fees
+    # Token Details
+    inputTokenAddress: String!
+    outputTokenAddress: String!
+    inputTokenAmount: BigInt! # Amount without adjusted for decimal
+    precisionInputAmount: Float! # adjucted with decimal
+    outputTokenAmount: BigInt!
+    precisionOutputAmount: Float!
+    usdInputAmount: Float! # input amount in USD
+    usdOutputAmount: Float! # output amount in USD
+}
+
+# type User {
+#   id: ID!
+#   greetings: [String!]!
+#   latestGreeting: String!
+#   numberOfGreetings: Int!
+# }

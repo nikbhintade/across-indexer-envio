@@ -7,17 +7,24 @@ unordered_multichain_mode: true
 #addresses. Now you can share a single handler/abi/event definitions
 #for contracts across multiple chains
 contracts:
-  - name: AcrossSpokePool
-    # abi_file_path: ./abis/greeter-abi.json
-    handler: ./src/AcrossEventHandlers.ts
-    events:
-      - event: FilledRelay(bytes32 inputToken, bytes32 outputToken, uint256 inputAmount, uint256 outputAmount, uint256 repaymentChainId, uint256 indexed originChainId, uint256 indexed depositId, uint32 fillDeadline, uint32 exclusivityDeadline, bytes32 exclusiveRelayer, bytes32 indexed relayer, bytes32 depositor, bytes32 recipient, bytes32 messageHash, (bytes32,bytes32,uint256,uint8) relayExecutionInfo)
-      - event: FundsDeposited(bytes32 inputToken, bytes32 outputToken, uint256 inputAmount, uint256 outputAmount, uint256 indexed destinationChainId, uint256 indexed depositId, uint32 quoteTimestamp, uint32 fillDeadline, uint32 exclusivityDeadline, bytes32 indexed depositor, bytes32 recipient, bytes32 exclusiveRelayer, bytes message)
+    - name: AcrossSpokePool
+      # abi_file_path: ./abis/greeter-abi.json
+      handler: ./src/AcrossEventHandlers.ts
+      events:
+          - event: FilledRelay(bytes32 inputToken, bytes32 outputToken, uint256 inputAmount, uint256 outputAmount, uint256 repaymentChainId, uint256 indexed originChainId, uint256 indexed depositId, uint32 fillDeadline, uint32 exclusivityDeadline, bytes32 exclusiveRelayer, bytes32 indexed relayer, bytes32 depositor, bytes32 recipient, bytes32 messageHash, (bytes32,bytes32,uint256,uint8) relayExecutionInfo)
+            field_selection:
+                transaction_fields:
+                    - "hash"
+                    - "value"
+          - event: FundsDeposited(bytes32 inputToken, bytes32 outputToken, uint256 inputAmount, uint256 outputAmount, uint256 indexed destinationChainId, uint256 indexed depositId, uint32 quoteTimestamp, uint32 fillDeadline, uint32 exclusivityDeadline, bytes32 indexed depositor, bytes32 recipient, bytes32 exclusiveRelayer, bytes message)
+            field_selection:
+                transaction_fields:
+                    - "hash"
+                    - "value"
+
 networks:
-  - id: 1
-    start_block: 22681286
-    contracts:
-      - name: AcrossSpokePool 
-        address: 0x5c7BCd6E7De5423a257D81B442095A1a6ced35C5
-
-
+    - id: 1
+      start_block: 22681286
+      contracts:
+          - name: AcrossSpokePool
+            address: 0x5c7BCd6E7De5423a257D81B442095A1a6ced35C5

@@ -37,7 +37,7 @@ networks:
 If you don't have same name defined at the top you will get an error.
 
 ```bash
-pnpm codegen
+> pnpm codegen
 
 > envio-indexer@0.1.0 codegen /home/recyclebin/projects/envio/across-indexer-v4
 > envio codegen
@@ -55,7 +55,7 @@ If any changes are made to `schema.graphql` or `config.yaml`, make sure to run t
 The successful codegen command output looks like following:
 
 ```bash
-pnpm codegen
+> pnpm codegen
 
 > envio-indexer@0.1.0 codegen /home/recyclebin/projects/envio/across-indexer-v4
 > envio codegen
@@ -95,4 +95,68 @@ Dependency on envio
 Dependency Finished
 rescript: [154/154] src/Index.cmj
 >>>> Finish compiling 824 mseconds
+```
+
+For getting additional fields, you need to use `field_selection` section and add what additional fields you want. For us those additional fields are transaction `hash` and `value` of ether sent with it. So modified `config.yaml` looks like following:
+
+```yaml
+events:
+    - event: FilledRelay(bytes32 inputToken, bytes32 outputToken, uint256 inputAmount, uint256 outputAmount, uint256 repaymentChainId, uint256 indexed originChainId, uint256 indexed depositId, uint32 fillDeadline, uint32 exclusivityDeadline, bytes32 exclusiveRelayer, bytes32 indexed relayer, bytes32 depositor, bytes32 recipient, bytes32 messageHash, (bytes32,bytes32,uint256,uint8) relayExecutionInfo)
+      field_selection:
+          transaction_fields:
+              - "hash"
+              - "value"
+    - event: FundsDeposited(bytes32 inputToken, bytes32 outputToken, uint256 inputAmount, uint256 outputAmount, uint256 indexed destinationChainId, uint256 indexed depositId, uint32 quoteTimestamp, uint32 fillDeadline, uint32 exclusivityDeadline, bytes32 indexed depositor, bytes32 recipient, bytes32 exclusiveRelayer, bytes message)
+      field_selection:
+          transaction_fields:
+              - "hash"
+              - "value"
+```
+
+You need to add `field_selection` for each event where you need it. I want to show transaction hash for both source and destination chains so I am getting hash value for both.
+
+While working with yaml make sure indentation is correct, I got error while working with it where I needed to change it from using tabs to spaces otherwise I got following error:
+
+```bash
+> pnpm codegen
+
+> envio-indexer@0.1.0 codegen /home/recyclebin/projects/envio/across-indexer-v4
+> envio codegen
+
+Error: Failed cli execution
+
+Caused by:
+    0: Failed parsing config
+    1: EE105: Failed to deserialize config. The config.yaml file is either not a valid yaml or the "ecosystem" field is not a string.
+    2: found a tab character that violates indentation at line 15 column 1, while scanning a plain scalar at line 14 column 20
+ ELIFECYCLE  Command failed with exit code 1.
+```
+
+While this issue might not happen while you work with this but I wanted to note it down anyway.
+
+For the field_selection section, we used name `hash` and `value` for transaction hash and ether value sent with transaction respectively but how would you know name of other field that you might need? You can name of field by going to this page. It also has field name for block and few others: [https://docs.envio.dev/docs/HyperSync/hypersync-query#data-schema](https://docs.envio.dev/docs/HyperSync/hypersync-query#data-schema)
+
+_Tests:_ When testing things like transaction hash, log index, or transaction value are automatically generated so you don't need to think about them.
+
+```ts
+const mockEvent = AcrossSpokePool.FundsDeposited.createMockEvent({
+    inputToken,
+    outputToken,
+    inputAmount,
+    outputAmount,
+    destinationChainId,
+    depositId,
+    exclusivityDeadline,
+    depositor,
+    recipient,
+    exclusiveRelayer,
+});
+```
+
+You can access them like shown below:
+
+```ts
+mockEvent.chainId; // get chainId
+mockEvent.block.number; // get block number
+mockEvent.transaction.hash; // get transaction hash
 ```

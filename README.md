@@ -3,10 +3,14 @@
 > [!WARNING]  
 > Project is work in progress so you might see boilerplate code in same place like in the `abi` or `test` folder.
 
--   [ ] Write handlers for `FilledRelay` & `FundDeposited`
+-   [x] Write handlers
+    - [x] `FilledRelay` handler
+    - [x] `FundDeposited` handler
 -   [ ] Price API integration
 -   [ ] Prices for past events
 -   [ ] Write tests for the indexer
+    - [x] `FilledRelay` tests
+    - [ ] `FundsDeposited` tests
 -   [ ] Dashboard
 
 ## Dashboard
@@ -19,6 +23,13 @@ To run the indexer locally make sure you have docker installed and run the follo
 
 ```bash
 pnpm dev
+```
+
+## Development & Testing
+
+Run following command to run tests for indexer:
+```bash
+pnpm test
 ```
 
 ## Notes

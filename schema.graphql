@@ -6,15 +6,16 @@ type Intent {
     filled: Boolean!
 
     # Addresses
-    depositor: String!
+    depositor: String! @index
     recipient: String!
 
     # Chain ID
     chainId: BigInt! # Chain ID of chain where deposit was made
     destinationChainId: BigInt! # Chain ID of chain where intent was filledd
     # Transaction Details
-    sourceTransactionHash: String!
+    sourceTransactionHash: String! @index
     destinationTransactionHash: String
+    createdTimestamp: BigInt! # timestamp of transaction which created the intent on source chain
     filledTimestamp: BigInt # timestamp of transaction which filled the intent on destination chain
     # Relayers Details
     exclusiveRelayer: String!

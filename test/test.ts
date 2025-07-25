@@ -121,7 +121,7 @@
 
 import assert from "assert";
 import { Intent, TestHelpers } from "generated";
-import { addressToBytes32 } from "../src/utils/addressUtils";
+import { addressToBytes32, bytes32ToAddress } from "../src/utils/addressUtils";
 import { ethers } from "ethers";
 const { MockDb, AcrossSpokePool } = TestHelpers;
 
@@ -169,7 +169,7 @@ describe("AcrossSpokePool template tests", () => {
     });
 
     const expectedId =
-      `${mockEvent.chainId}_${mockEvent.block.number}_${mockEvent.logIndex}`;
+      `${mockEvent.chainId}_${mockEvent.params.destinationChainId}_${mockEvent.params.depositId}_${mockEvent.params.depositor}`;
     const intent = updatedMockDb.entities.Intent.get(expectedId);
 
     assert(intent, "Intent entity should exist");
@@ -266,5 +266,8 @@ describe("AcrossSpokePool template tests", () => {
       undefined,
       "usdOutputAmount should be undefined",
     );
+  });
+
+  it("updates an existing Intent as filled", async () => {
   });
 });

@@ -4,13 +4,17 @@
 > Project is work in progress so you might see boilerplate code in same place like in the `abi` or `test` folder.
 
 -   [x] Write handlers
-    - [x] `FilledRelay` handler
-    - [x] `FundDeposited` handler
+    -   [x] `FilledRelay` handler
+    -   [x] `FundDeposited` handler
+    -   [ ] `FilledV3Relay` handler
+    -   [ ] `V3FundsDeposited` handler
 -   [ ] Price API integration
 -   [ ] Prices for past events
 -   [ ] Write tests for the indexer
-    - [x] `FilledRelay` tests
-    - [ ] `FundsDeposited` tests
+    -   [x] `FilledRelay` tests
+    -   [x] `FundsDeposited` tests
+-   [x] Update `config.yaml` with Spoke Pool address for each network
+-   [ ] Find RPC for Lens & Redstone and check if indexing works
 -   [ ] Dashboard
 
 ## Dashboard
@@ -28,6 +32,7 @@ pnpm dev
 ## Development & Testing
 
 Run following command to run tests for indexer:
+
 ```bash
 pnpm test
 ```

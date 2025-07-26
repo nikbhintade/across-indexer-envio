@@ -61,7 +61,8 @@ AcrossSpokePool.FilledRelay.handler(async ({ event, context }) => {
         return;
     }
 
-    const sameRelayer = event.params.relayer === intent.exclusiveRelayer;
+    const sameRelayer =
+        bytes32ToAddress(event.params.relayer) === intent.exclusiveRelayer;
 
     const updatedIntent: Intent = {
         ...intent,

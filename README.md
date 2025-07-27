@@ -8,14 +8,18 @@
     -   [x] `FundDeposited` handler
     -   [ ] `FilledV3Relay` handler
     -   [ ] `V3FundsDeposited` handler
+    -   [x] Modify exsiting handlers for managing past data gracefully
 -   [ ] Price API integration
 -   [ ] Prices for past events
 -   [ ] Write tests for the indexer
     -   [x] `FilledRelay` tests
     -   [x] `FundsDeposited` tests
+    -   [x] Past event handling tests
 -   [x] Update `config.yaml` with Spoke Pool address for each network
 -   [ ] Find RPC for Lens & Redstone and check if indexing works
 -   [ ] Dashboard
+
+The assumption at the start of writing this indexer was that the FundsDeposited event would be emitted first, followed by the FilledRelay event. However, this logic doesn't work when indexing past data, as multiple chains and events are being indexed simultaneously, and they don't arrive in that order. Therefore, modifications were needed afterward to handle it accordingly.
 
 ## Dashboard
 

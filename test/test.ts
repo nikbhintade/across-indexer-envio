@@ -278,6 +278,305 @@ describe("AcrossSpokePool template tests", () => {
     }
   });
 
+  it.only("Updating an existing Intent in FundsDeposited handler", async () => {
+    // Initializing the mock database
+    const mockDbInitial = MockDb.createMockDb();
+
+    // create mock FilldRelay event & process it
+
+    const ethereumChainId = 1;
+    const arbitrumChainId = 42161;
+
+    // create FundsDeposited event
+    const inputToken = ethers.getAddress(
+      "0x2260FAC5E5542A773AA44FBCFEDF7C193BC2C599",
+    );
+    const outputToken = ethers.getAddress(
+      "0x2F2A2543B76A4166549F7AAB2E75BEF0AEFC5B0F",
+    );
+    const inputAmount = BigInt(50000000);
+    const outputAmount = BigInt(49982243);
+    const destinationChainId = BigInt(arbitrumChainId);
+    const depositId = BigInt(2895437);
+    const exclusivityDeadline = BigInt(1753443971);
+    const depositor = ethers.getAddress(
+      "0x58817EB46BF7075BDF00AD8BD6C2AC731E9B045F",
+    );
+    const recipient = ethers.getAddress(
+      "0x58817EB46BF7075BDF00AD8BD6C2AC731E9B045F",
+    );
+    const exclusiveRelayer = ethers.getAddress(
+      "0xEF1EC136931AB5728B0783FD87D109C9D15D31F1",
+    );
+
+    const filledRelayEvent = AcrossSpokePool.FilledRelay.createMockEvent({
+      inputToken: addressToBytes32(inputToken),
+      outputToken: addressToBytes32(outputToken),
+      inputAmount,
+      outputAmount,
+      repaymentChainId: BigInt(ethereumChainId),
+      originChainId: BigInt(ethereumChainId),
+      depositId,
+      fillDeadline: BigInt(1753443972),
+      exclusivityDeadline,
+      exclusiveRelayer: addressToBytes32(exclusiveRelayer),
+      relayer: addressToBytes32(exclusiveRelayer), // same as exclusiveRelayer
+      depositor: addressToBytes32(depositor),
+      recipient: addressToBytes32(recipient),
+      messageHash: ethers.ZeroHash,
+      relayExecutionInfo: [
+        ethers.ZeroHash,
+        ethers.ZeroHash,
+        BigInt(0),
+        BigInt(0),
+      ],
+      mockEventData: {
+        chainId: arbitrumChainId,
+      },
+    });
+
+    const updatedMockDb = await AcrossSpokePool.FilledRelay.processEvent({
+      event: filledRelayEvent,
+      mockDb: mockDbInitial,
+    });
+
+    const intent = updatedMockDb.entities.Intent.get(
+      `${filledRelayEvent.params.originChainId}_${filledRelayEvent.chainId}_${filledRelayEvent.params.depositId}_${filledRelayEvent.params.depositor}`,
+    );
+
+    // assertions
+    assert(intent, "Intent entity should exist");
+
+    // depositId
+    assert.strictEqual(intent.depositId, depositId, "depositId mismatch");
+    // filled flag
+    assert.strictEqual(intent.filled, true, "filled should be true");
+    // depositor
+    assert.strictEqual(intent.depositor, depositor, "depositor mismatch");
+    // recipient
+    assert.strictEqual(intent.recipient, recipient, "recipient mismatch");
+    // chainId
+    assert.strictEqual(
+      intent.chainId,
+      BigInt(ethereumChainId),
+      "chainId mismatch",
+    );
+    // destinationChainId
+    assert.strictEqual(
+      intent.destinationChainId,
+      BigInt(arbitrumChainId),
+      "destinationChainId mismatch",
+    );
+    // sourceTransactionHash == ""
+    assert.strictEqual(
+      intent.sourceTransactionHash,
+      "",
+      "sourceTransactionHash should be empty",
+    );
+    // exclusiveRelayer
+    assert.strictEqual(
+      intent.exclusiveRelayer,
+      exclusiveRelayer,
+      "exclusiveRelayer mismatch",
+    );
+    // exclusivityDeadline
+    assert.strictEqual(
+      intent.exclusivityDeadline,
+      exclusivityDeadline,
+      "exclusivityDeadline mismatch",
+    );
+    // inputTokenAddress
+    assert.strictEqual(
+      intent.inputTokenAddress,
+      inputToken,
+      "inputTokenAddress mismatch",
+    );
+    // outputTokenAddress
+    assert.strictEqual(
+      intent.outputTokenAddress,
+      outputToken,
+      "outputTokenAddress mismatch",
+    );
+    // inputTokenAmount
+    assert.strictEqual(
+      intent.inputTokenAmount,
+      inputAmount,
+      "inputTokenAmount mismatch",
+    );
+    // outputTokenAmount
+    assert.strictEqual(
+      intent.outputTokenAmount,
+      outputAmount,
+      "outputTokenAmount mismatch",
+    );
+    // createdTimestamp == 0
+    assert.strictEqual(
+      intent.createdTimestamp,
+      BigInt(0),
+      "createdTimestamp should be 0",
+    );
+    // destinationTransactionHash == event.transaction.hash
+    assert.strictEqual(
+      intent.destinationTransactionHash,
+      filledRelayEvent.transaction.hash,
+      "destinationTransactionHash mismatch",
+    );
+    // feeAmount == 0
+    assert.strictEqual(intent.feeAmount, BigInt(0), "feeAmount should be 0");
+    // filledTimestamp == event.block.timestamp
+    assert.strictEqual(
+      intent.filledTimestamp,
+      BigInt(filledRelayEvent.block.timestamp),
+      "filledTimestamp mismatch",
+    );
+    // precisionInputAmount == undefined
+    assert.strictEqual(
+      intent.precisionInputAmount,
+      undefined,
+      "precisionInputAmount should be undefined",
+    );
+    // precisionOutputAmount == undefined
+    assert.strictEqual(
+      intent.precisionOutputAmount,
+      undefined,
+      "precisionOutputAmount should be undefined",
+    );
+    // resolvedBy == relayer
+    assert.strictEqual(
+      intent.resolvedBy,
+      bytes32ToAddress(filledRelayEvent.params.relayer),
+      "resolvedBy mismatch",
+    );
+    // sameRelayer == true
+    assert.strictEqual(
+      intent.sameRelayer,
+      true,
+      "sameRelayer mismatch (should be true, same relayer)",
+    );
+    // usdInputAmount == undefined
+    assert.strictEqual(
+      intent.usdInputAmount,
+      undefined,
+      "usdInputAmount should be undefined",
+    );
+    // usdOutputAmount == undefined
+    assert.strictEqual(
+      intent.usdOutputAmount,
+      undefined,
+      "usdOutputAmount should be undefined",
+    );
+
+    // create FundsDeposited event & process it
+    const mockEvent = AcrossSpokePool.FundsDeposited.createMockEvent({
+      inputToken: addressToBytes32(inputToken),
+      outputToken: addressToBytes32(outputToken),
+      inputAmount,
+      outputAmount,
+      destinationChainId,
+      depositId,
+      exclusivityDeadline,
+      depositor: addressToBytes32(depositor),
+      recipient: addressToBytes32(recipient),
+      exclusiveRelayer: addressToBytes32(exclusiveRelayer),
+      mockEventData: {
+        chainId: ethereumChainId,
+      },
+    });
+
+    const updatedMockDb2 = await AcrossSpokePool.FundsDeposited.processEvent({
+      event: mockEvent,
+      mockDb: updatedMockDb,
+    });
+
+    // assertions
+
+    const expectedId =
+      `${mockEvent.chainId}_${mockEvent.params.destinationChainId}_${mockEvent.params.depositId}_${mockEvent.params.depositor}`;
+    const updatedIntent = updatedMockDb2.entities.Intent.get(expectedId);
+
+    assert(updatedIntent, "Intent entity should exist");
+
+    // depositId
+    assert.strictEqual(
+      updatedIntent.depositId,
+      depositId,
+      "depositId mismatch",
+    );
+    // depositor
+    assert.strictEqual(
+      updatedIntent.depositor,
+      depositor,
+      "depositor mismatch",
+    );
+    // recipient
+    assert.strictEqual(
+      updatedIntent.recipient,
+      recipient,
+      "recipient mismatch",
+    );
+    // chainId
+    assert.strictEqual(
+      updatedIntent.chainId,
+      BigInt(ethereumChainId),
+      "chainId mismatch",
+    );
+    // destinationChainId
+    assert.strictEqual(
+      updatedIntent.destinationChainId,
+      BigInt(arbitrumChainId),
+      "destinationChainId mismatch",
+    );
+    // sourceTransactionHash == mockEvent.transaction.hash
+    assert.strictEqual(
+      updatedIntent.sourceTransactionHash,
+      mockEvent.transaction.hash,
+      "sourceTransactionHash mismatch",
+    );
+
+    // exclusiveRelayer
+    assert.strictEqual(
+      updatedIntent.exclusiveRelayer,
+      exclusiveRelayer,
+      "exclusiveRelayer mismatch",
+    );
+    // exclusivityDeadline
+    assert.strictEqual(
+      updatedIntent.exclusivityDeadline,
+      exclusivityDeadline,
+      "exclusivityDeadline mismatch",
+    );
+    // inputTokenAddress
+    assert.strictEqual(
+      updatedIntent.inputTokenAddress,
+      inputToken,
+      "inputTokenAddress mismatch",
+    );
+    // outputTokenAddress
+    assert.strictEqual(
+      updatedIntent.outputTokenAddress,
+      outputToken,
+      "outputTokenAddress mismatch",
+    );
+    // inputTokenAmount
+    assert.strictEqual(
+      updatedIntent.inputTokenAmount,
+      inputAmount,
+      "inputTokenAmount mismatch",
+    );
+    // outputTokenAmount
+    assert.strictEqual(
+      updatedIntent.outputTokenAmount,
+      outputAmount,
+      "outputTokenAmount mismatch",
+    );
+    // createdTimestamp == mockEvent.block.timestamp
+    assert.strictEqual(
+      updatedIntent.createdTimestamp,
+      BigInt(mockEvent.block.timestamp),
+      "createdTimestamp mismatch",
+    );
+  });
+
   it("updates an existing Intent as filled", async () => {
     const mockDbInitial = MockDb.createMockDb();
 

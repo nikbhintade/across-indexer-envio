@@ -9,12 +9,14 @@
     -   [ ] `FilledV3Relay` handler
     -   [ ] `V3FundsDeposited` handler
     -   [x] Modify exsiting handlers for managing past data gracefully
--   [ ] Price API integration
+-   [x] Price API integration
 -   [ ] Prices for past events
 -   [ ] Write tests for the indexer
     -   [x] `FilledRelay` tests
     -   [x] `FundsDeposited` tests
     -   [x] Past event handling tests
+    -   [x] `getPrice` function tests
+    -   [ ] Tests for price feed integration in the handler
 -   [x] Update `config.yaml` with Spoke Pool address for each network
 -   [ ] Find RPC for Lens & Redstone and check if indexing works
 -   [ ] Dashboard

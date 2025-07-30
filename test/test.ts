@@ -125,6 +125,96 @@ import { addressToBytes32, bytes32ToAddress } from "../src/utils/addressUtils";
 import { ethers } from "ethers";
 const { MockDb, AcrossSpokePool } = TestHelpers;
 
+import fs from "fs";
+import path from "path";
+import mockFs from "mock-fs";
+import nock from "nock";
+
+import { getPrice } from "../src/utils/getPrice";
+
+describe("getPrice", () => {
+  const tokenWithChain = "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1";
+  const mockApiUrl = "https://coins.llama.fi";
+  const mockApiResponse = {
+    coins: {
+      [tokenWithChain]: {
+        decimals: 8,
+        price: 0.022,
+        symbol: "cDAI",
+        timestamp: 1720076645,
+      },
+    },
+  };
+  const filePath = path.join(__dirname, "../data/prices.json");
+
+  beforeEach(() => {
+    console.log("dir name:", __dirname);
+    // Set up fake filesystem
+    mockFs({
+      [path.join(__dirname, "../data")]: {
+        "prices.json": "{}",
+      },
+    });
+  });
+
+  afterEach(() => {
+    mockFs.restore();
+    nock.cleanAll();
+  });
+
+  it("fetches fresh data and caches it when not already cached", async () => {
+    nock(mockApiUrl)
+      .get(`/prices/current/${tokenWithChain}`)
+      .reply(200, mockApiResponse);
+
+    const [price, decimals] = await getPrice(tokenWithChain);
+
+    console.log("Price of token:", price);
+    assert.strictEqual(price, 0.022);
+    assert.strictEqual(decimals, 8);
+
+    const saved = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    assert.strictEqual(saved[tokenWithChain].currentPrice, 0.022);
+    assert.strictEqual(saved[tokenWithChain].decimals, 8);
+  });
+
+  it.only("returns cached data if not older than 60 seconds", async () => {
+    const now = Math.floor(Date.now() / 1000);
+    const cached = {
+      [tokenWithChain]: {
+        currentPrice: 0.123,
+        decimals: 6,
+        timestamp: now,
+      },
+    };
+    fs.writeFileSync(filePath, JSON.stringify(cached, null, 2), "utf8");
+
+    const [price, decimals] = await getPrice(tokenWithChain);
+    assert.strictEqual(price, 0.123);
+    assert.strictEqual(decimals, 6);
+  });
+
+  it("returns [0, 0] when fetch fails", async () => {
+    nock(mockApiUrl)
+      .get(`/prices/current/${tokenWithChain}`)
+      .reply(500);
+
+    const [price, decimals] = await getPrice(tokenWithChain);
+    assert.strictEqual(price, 0);
+    assert.strictEqual(decimals, 0);
+  });
+
+  it("returns [0, 0] when response has no token data", async () => {
+    nock(mockApiUrl)
+      .get(`/prices/current/${tokenWithChain}`)
+      .reply(200, { coins: {} });
+
+    const [price, decimals] = await getPrice(tokenWithChain);
+    assert.strictEqual(price, 0);
+    assert.strictEqual(decimals, 0);
+  });
+});
+
 describe("AcrossSpokePool template tests", () => {
   it("FundsDeposited creates a new Intent entity", async () => {
     const mockDbInitial = MockDb.createMockDb();
@@ -278,7 +368,7 @@ describe("AcrossSpokePool template tests", () => {
     }
   });
 
-  it.only("Updating an existing Intent in FundsDeposited handler", async () => {
+  it("Updating an existing Intent in FundsDeposited handler", async () => {
     // Initializing the mock database
     const mockDbInitial = MockDb.createMockDb();
 

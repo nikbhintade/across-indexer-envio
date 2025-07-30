@@ -24,7 +24,7 @@ contracts:
 
 networks:
     - id: 1
-      start_block: 0
+      start_block: 22516839
       contracts:
           - name: AcrossSpokePool
             address:
@@ -90,7 +90,7 @@ networks:
     #         address:
     #             - 0x3baD7AD0728f9917d1Bf08af5782dCbD516cDd96
     - id: 42161
-      start_block: 0
+      start_block: 361419019
       contracts:
           - name: AcrossSpokePool
             address:

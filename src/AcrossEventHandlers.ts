@@ -1,5 +1,7 @@
 import { AcrossSpokePool, Intent } from "generated";
 import { bytes32ToAddress } from "./utils/addressUtils";
+import { getNameFromChainId } from "./utils/getNameFromChainId";
+import { getPrice } from "./utils/getPrice";
 
 // Handler for the FilledRelay event
 // This event is triggered when a wallet or contract sends requests to bridge assets with Across protocol
@@ -7,6 +9,41 @@ import { bytes32ToAddress } from "./utils/addressUtils";
 AcrossSpokePool.FundsDeposited.handler(async ({ event, context }) => {
     const eventId =
         `${event.chainId}_${event.params.destinationChainId}_${event.params.depositId}_${event.params.depositor}`;
+
+    // call defillama api to get current price and decimal for the input and output tokens
+    // curl 'https://coins.llama.fi/prices/current/{coins}'
+    // Example:
+    //     {
+    //   "coins": {
+    //     "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1": {
+    //       "decimals": 8,
+    //       "price": 0.022053735051098835,
+    //       "symbol": "cDAI",
+    //       "timestamp": 0.99
+    //     }
+    //   }
+    // }
+
+    const inputTokenAddress = bytes32ToAddress(event.params.inputToken);
+    const outputTokenAddress = bytes32ToAddress(event.params.outputToken);
+    const chainId = event.chainId;
+    const destinationChainId = event.params.destinationChainId;
+
+    // read json file and find name of the chain for the chainId
+    const names = getNameFromChainId(chainId, Number(destinationChainId));
+
+    const tokenOneData = await getPrice(`${names[0]}:${inputTokenAddress}`);
+    const tokenTwoData = await getPrice(`${names[1]}:${outputTokenAddress}`);
+
+    const precisionInputAmount = Number(
+        event.params.inputAmount / BigInt(tokenOneData[1]),
+    );
+    const precisionOutputAmount = Number(
+        event.params.outputAmount / BigInt(tokenTwoData[1]),
+    );
+
+    const usdInputAmount = tokenOneData[0] * precisionInputAmount;
+    const usdOutputAmount = tokenTwoData[0] * precisionOutputAmount;
 
     const existingIntent = await context.Intent.get(eventId);
     if (existingIntent != undefined) {
@@ -29,6 +66,10 @@ AcrossSpokePool.FundsDeposited.handler(async ({ event, context }) => {
             inputTokenAmount: BigInt(event.params.inputAmount),
             outputTokenAmount: BigInt(event.params.outputAmount),
             createdTimestamp: BigInt(event.block.timestamp),
+            precisionInputAmount,
+            precisionOutputAmount,
+            usdInputAmount,
+            usdOutputAmount,
         };
 
         context.Intent.set(intent);
@@ -55,12 +96,12 @@ AcrossSpokePool.FundsDeposited.handler(async ({ event, context }) => {
             destinationTransactionHash: undefined,
             feeAmount: undefined,
             filledTimestamp: undefined,
-            precisionInputAmount: undefined,
-            precisionOutputAmount: undefined,
+            precisionInputAmount,
+            precisionOutputAmount,
             resolvedBy: undefined,
             sameRelayer: undefined,
-            usdInputAmount: undefined,
-            usdOutputAmount: undefined,
+            usdInputAmount,
+            usdOutputAmount,
         };
 
         context.Intent.set(intent);
